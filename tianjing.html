@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>徽派天井 · 沉浸体验</title>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
@@ -13,7 +13,10 @@
     </style>
 </head>
 <body>
-    <div id="loader">正在呼唤天井模型...<br><span id="percent">0%</span></div>
+    <div id="loader">
+        正在搬运天井模型...<br>
+        <span id="percent" style="font-size: 24px; color: #333;">0%</span>
+    </div>
     <script>
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xf4f4f2);
@@ -28,14 +31,15 @@
         
         const loader = new THREE.GLTFLoader();
         
-        // 【莹莹注意】这里使用特殊的 cdn 代理地址，它在国内加载 GitHub 文件非常快！
-        const modelUrl = 'https://jsd.onmicrosoft.cn/gh/yings77520/web-pages@main/tianjing.glb';
+        
+        const modelUrl = 'https://cdn.jsdelivr.net/gh/yings77520/web-pages@main/tianjing.glb';
 
         loader.load(modelUrl, (gltf) => {
             document.getElementById('loader').style.display = 'none';
             scene.add(gltf.scene);
             const box = new THREE.Box3().setFromObject(gltf.scene);
-            camera.position.z = box.getSize(new THREE.Vector3()).length() * 1.5;
+            const size = box.getSize(new THREE.Vector3());
+            camera.position.z = Math.max(size.x, size.y, size.z) * 2;
         }, (xhr) => {
             if (xhr.lengthComputable) {
                 const percent = Math.round(xhr.loaded / xhr.total * 100);
@@ -43,7 +47,7 @@
             }
         }, (err) => {
             console.error(err);
-            document.getElementById('loader').innerText = "信号微弱，请点击右上角刷新";
+            document.getElementById('loader').innerHTML = "当前连接较慢，请稍等或重新点击";
         });
 
         function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
