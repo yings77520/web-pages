@@ -9,11 +9,11 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
         body { margin: 0; background-color: #f4f4f2; overflow: hidden; }
-        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-family: sans-serif; text-align: center; }
+        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-family: "STKaiti", "KaiTi", serif; text-align: center; }
     </style>
 </head>
 <body>
-    <div id="loader">墨色渲染中...</div>
+    <div id="loader">正在呼唤你的天井模型...</div>
     <script>
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xf4f4f2);
@@ -28,25 +28,33 @@
         
         const loader = new THREE.GLTFLoader();
         
-        // 【核心修改】使用 raw 原始路径，直接穿透微信拦截
-        const modelUrl = 'https://raw.githubusercontent.com/yings77520/web-pages/main/tianjing.glb';
+        // 莹莹，这是你最心爱的那个 0.7MB 模型的直连地址
+        const modelUrl = 'https://yings77520.github.io/web-pages/tianjing.glb?v=' + Date.now();
 
-        loader.load(modelUrl, (gltf) => {
-            document.getElementById('loader').style.display = 'none';
-            scene.add(gltf.scene);
-            const box = new THREE.Box3().setFromObject(gltf.scene);
-            const center = box.getCenter(new THREE.Vector3());
-            gltf.scene.position.sub(center);
-            camera.position.z = box.getSize(new THREE.Vector3()).length() * 1.5;
-        }, (xhr) => {
-            if (xhr.lengthComputable) {
-                const percent = Math.round(xhr.loaded / xhr.total * 100);
-                document.getElementById('loader').innerText = '正在搬运天井: ' + percent + '%';
-            }
-        }, (error) => {
-            console.error(error);
-            document.getElementById('loader').innerText = '连接云端失败，请检查网络';
-        });
+        function loadMyModel() {
+            loader.load(modelUrl, (gltf) => {
+                document.getElementById('loader').style.display = 'none';
+                const model = gltf.scene;
+                // 居中自适应
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.sub(center);
+                scene.add(model);
+                console.log("终于等到你！模型加载成功。");
+            }, (xhr) => {
+                if (xhr.lengthComputable) {
+                    const percent = Math.round(xhr.loaded / xhr.total * 100);
+                    document.getElementById('loader').innerText = '搬运中: ' + percent + '%';
+                }
+            }, (error) => {
+                console.error("加载出错了:", error);
+                document.getElementById('loader').innerHTML = '正在尝试备用线路重新连接...';
+                // 3秒后自动重试一次
+                setTimeout(loadMyModel, 3000);
+            });
+        }
+
+        loadMyModel();
 
         function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
         animate();
