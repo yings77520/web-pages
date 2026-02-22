@@ -25,7 +25,7 @@
         p { margin: 0; color: #555; font-size: 0.95rem; line-height: 1.7; }
         .loading { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            color: #666; font-size: 1.1rem; letter-spacing: 2px;
+            color: #666; font-size: 1.1rem; letter-spacing: 2px; text-align: center;
         }
     </style>
 </head>
@@ -35,7 +35,7 @@
         <h2>天道 · 自然</h2>
         <p>天井是徽派建筑的“呼吸之窗”。其“四水归堂”的设计，不仅是地理环境下的排水智慧，更寄托了聚财纳气、天人合一的美好愿景。</p>
     </div>
-    <div class="loading" id="loader">墨色渲染中...</div>
+    <div class="loading" id="loader">墨色渲染中...<br><small style="font-size: 0.7rem; opacity: 0.6;">正在请求云端资源</small></div>
 
     <script>
         let scene, camera, renderer, controls;
@@ -53,7 +53,7 @@
             renderer.outputEncoding = THREE.sRGBEncoding;
             document.body.appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 2.0)); // 调亮光照
+            scene.add(new THREE.AmbientLight(0xffffff, 2.0)); 
             const light = new THREE.DirectionalLight(0xffffff, 1.2);
             light.position.set(10, 10, 10);
             scene.add(light);
@@ -63,24 +63,32 @@
             controls.autoRotate = true;
 
             const loader = new THREE.GLTFLoader();
-            // 直接读取同级目录下的模型，不进文件夹
-            loader.load('tianjing.glb', (gltf) => {
+            
+            // 【莹莹注意】这里改用了你的 GitHub 绝对路径，防止小程序拦截本地读取
+            const onlineModel = 'https://yings77520.github.io/web-pages/tianjing.glb';
+            
+            loader.load(onlineModel, (gltf) => {
                 document.getElementById('loader').style.display = 'none';
                 const model = gltf.scene;
                 
-                // 居中自适应
                 const box = new THREE.Box3().setFromObject(model);
                 const size = box.getSize(new THREE.Vector3());
                 const center = box.getCenter(new THREE.Vector3());
                 
                 model.position.sub(center);
                 const maxDim = Math.max(size.x, size.y, size.z);
-                camera.position.z = maxDim * 2;
+                camera.position.z = maxDim * 2.2; // 稍微拉远一点视角
                 
                 scene.add(model);
-            }, undefined, (error) => {
+                console.log('云端模型加载成功！');
+            }, (xhr) => {
+                if (xhr.total > 0) {
+                    const percent = Math.round(xhr.loaded / xhr.total * 100);
+                    document.getElementById('loader').innerHTML = `墨色渲染中... ${percent}%`;
+                }
+            }, (error) => {
                 console.error('加载失败:', error);
-                document.getElementById('loader').innerText = '找到文件了，请刷新页面重试';
+                document.getElementById('loader').innerText = '模型加载失败，请检查网络或刷新';
             });
 
             animate();
