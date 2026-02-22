@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>徽派天井 · 天道自然</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body { margin: 0; background: #f4f4f2; font-family: "STKaiti", "KaiTi", serif; overflow: hidden; }
+        .bg-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 70% 30%, rgba(0,0,0,0.06) 0%, transparent 60%);
+            pointer-events: none; z-index: 0;
+        }
+        #info-card {
+            position: absolute; bottom: 30px; left: 20px; right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-left: 5px solid #333; padding: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); backdrop-filter: blur(8px);
+            z-index: 10; border-radius: 2px;
+        }
+        h2 { margin: 0 0 10px 0; color: #2c3e50; font-size: 1.3rem; border-bottom: 1px dashed #ccc; padding-bottom: 8px; }
+        p { margin: 0; color: #555; font-size: 0.95rem; line-height: 1.7; }
+        .loading { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            color: #666; font-size: 1.1rem; letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-overlay"></div>
+    <div id="info-card">
+        <h2>天道 · 自然</h2>
+        <p>天井是徽派建筑的“呼吸之窗”。其“四水归堂”的设计，不仅是地理环境下的排水智慧，更寄托了聚财纳气、天人合一的美好愿景。</p>
+    </div>
+    <div class="loading" id="loader">墨色渲染中...</div>
+
+    <script>
+        let scene, camera, renderer, controls;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf4f4f2);
+            
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 2000);
+            camera.position.set(5, 5, 10);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            document.body.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 2.0)); // 调亮光照
+            const light = new THREE.DirectionalLight(0xffffff, 1.2);
+            light.position.set(10, 10, 10);
+            scene.add(light);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.autoRotate = true;
+
+            const loader = new THREE.GLTFLoader();
+            // 直接读取同级目录下的模型，不进文件夹
+            loader.load('tianjing.glb', (gltf) => {
+                document.getElementById('loader').style.display = 'none';
+                const model = gltf.scene;
+                
+                // 居中自适应
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                
+                model.position.sub(center);
+                const maxDim = Math.max(size.x, size.y, size.z);
+                camera.position.z = maxDim * 2;
+                
+                scene.add(model);
+            }, undefined, (error) => {
+                console.error('加载失败:', error);
+                document.getElementById('loader').innerText = '找到文件了，请刷新页面重试';
+            });
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls) controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

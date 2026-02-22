@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>徽筑识萃 · 连线挑战</title>
+    <style>
+        body { margin: 0; background: #fdfdfb; font-family: "STKaiti", "KaiTi", serif; user-select: none; touch-action: none; }
+        .header { text-align: center; padding: 20px 0; background: #333; color: #fff; letter-spacing: 4px; }
+        .container { display: flex; justify-content: space-between; padding: 40px 20px; position: relative; max-width: 600px; margin: 0 auto; }
+        .column { display: flex; flex-direction: column; gap: 30px; z-index: 2; }
+        .item { 
+            padding: 12px 20px; background: #fff; border: 1px solid #dcdcdc; 
+            border-radius: 4px; cursor: pointer; transition: all 0.3s;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.05); text-align: center;
+            min-width: 80px; font-weight: bold;
+        }
+        .item.selected { border-color: #000; background: #f0f0f0; transform: scale(1.05); }
+        .item.matched { background: #e8f5e9; color: #4caf50; border-color: #4caf50; cursor: default; }
+        
+        canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1; }
+        #msg { text-align: center; color: #888; font-size: 0.9rem; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">徽 筑 识 萃</div>
+    <div id="msg">请将左侧名称与右侧功能连线</div>
+
+    <div class="container" id="game-box">
+        <canvas id="canvas"></canvas>
+        <div class="column" id="left-col">
+            <div class="item" data-id="1">马头墙</div>
+            <div class="item" data-id="2">小青瓦</div>
+            <div class="item" data-id="3">石雕</div>
+        </div>
+        <div class="column" id="right-col">
+            <div class="item" data-id="2">屋面防水排水</div>
+            <div class="item" data-id="3">门罩装饰艺术</div>
+            <div class="item" data-id="1">防火防风装饰</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let selectedItem = null;
+        let matches = [];
+
+        function initCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            drawLines();
+        }
+
+        function drawLines() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#999';
+
+            matches.forEach(m => {
+                const start = getCenter(m.from);
+                const end = getCenter(m.to);
+                ctx.beginPath();
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
+                ctx.stroke();
+            });
+        }
+
+        function getCenter(el) {
+            const rect = el.getBoundingClientRect();
+            return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        }
+
+        document.querySelectorAll('.item').forEach(item => {
+            item.addEventListener('touchstart', (e) => {
+                if (item.classList.contains('matched')) return;
+
+                if (!selectedItem) {
+                    selectedItem = item;
+                    item.classList.add('selected');
+                } else {
+                    const isLeftRight = (selectedItem.parentElement !== item.parentElement);
+                    if (isLeftRight && selectedItem.dataset.id === item.dataset.id) {
+                        // 匹配成功
+                        matches.push({ from: selectedItem, to: item });
+                        selectedItem.classList.add('matched');
+                        item.classList.add('matched');
+                        if(matches.length === 3) document.getElementById('msg').innerText = "大智若愚，精妙绝伦！";
+                    }
+                    selectedItem.classList.remove('selected');
+                    selectedItem = null;
+                    drawLines();
+                }
+            });
+        });
+
+        window.addEventListener('resize', initCanvas);
+        setTimeout(initCanvas, 100);
+    </script>
+</body>
+</html>
